@@ -62,7 +62,26 @@ void print_users(Table_t *table, int *idxList, size_t idxListLen, Command_t *cmd
     size_t idx;
     int limit = cmd->cmd_args.sel_args.limit;
     int offset = cmd->cmd_args.sel_args.offset;
+    
+    /*
+    for(idx = 0;idx<cmd->whe_args.whe_args.fields_len;idx++){
+	   printf("field:%s\n",cmd->whe_args.whe_args.fields[idx]); 
+    }
+    printf("%ld\n",cmd->whe_args.whe_args.fields_len);
+    printf("%ld\n",cmd->whe_args.whe_args.op_type1);
+    printf("%ld\n",cmd->whe_args.whe_args.op_type2);
+    printf("HELLO1\n");
+    if(cmd->whe_args.whe_args.string_comp1)
+    	printf("%s\n",cmd->whe_args.whe_args.string_comp1);
+    if(cmd->whe_args.whe_args.string_comp2)
+	printf("%s\n",cmd->whe_args.whe_args.string_comp2);
+    printf("HELLO2\n");
+    printf("%ld\n",cmd->whe_args.whe_args.num_comp1);
+    printf("%ld\n",cmd->whe_args.whe_args.num_comp2);
+    printf("%ld\n",cmd->whe_args.whe_args.op_num);
 
+
+    */
     if (offset == -1) {
         offset = 0;
     }
@@ -72,16 +91,40 @@ void print_users(Table_t *table, int *idxList, size_t idxListLen, Command_t *cmd
             if (limit != -1 && (idx - offset) >= limit) {
                 break;
             }
-            print_user(get_User(table, idxList[idx]), &(cmd->cmd_args.sel_args));
+	    if(check_condition(cmd,table,idx))
+            	print_user(get_User(table, idxList[idx]), &(cmd->cmd_args.sel_args));
         }
     } else {
         for (idx = offset; idx < table->len; idx++) {
             if (limit != -1 && (idx - offset) >= limit) {
                 break;
             }
-            print_user(get_User(table, idx), &(cmd->cmd_args.sel_args));
+	    if(check_condition(cmd,table,idx))
+            	print_user(get_User(table, idx), &(cmd->cmd_args.sel_args));
         }
     }
+}
+
+int void check_condition(Command_t *cmd, Table_t *table,size_t idx){
+    User_t *temp_user = NULL;
+    if(cmd->whe_args.whe_args.fields_len == 0)
+	return 1;
+    else if(cmd->whe_args.whe_args.fields_len >0){
+	temp_user = get_User(table,idx);
+	if(cmd->whe.args.whe_args.op_type1 == stringEqualto || cmd->whe.args.whe_args.op_type1 == stringNotEqualto){
+	   if(!strncmp(cmd->whe_args.whe_args.fields[0],"name",4)){
+	   
+	   } else if (!strncmp(cmd->whe_args.whe_args.fields[1],"email",5)){
+	   
+	   }
+	} else{
+	
+	}
+	if(cmd->whe_args.whe_args.fields_len ==2){
+
+	}
+    }
+    else return 1; 
 }
 
 ///
