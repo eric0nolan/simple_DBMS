@@ -91,7 +91,8 @@ void print_users(Table_t *table, int *idxList, size_t idxListLen, Command_t *cmd
 
 	//the aggregate function
 	if(cmd->agge_args.agge_args.agge_type!=none){
-		print_agge(table,idxList,idxListLen,cmd);
+		if(offset ==0)
+			print_agge(table,idxList,idxListLen,cmd);
 		return;
 	}
 	//end of the aggregate function
@@ -459,11 +460,35 @@ int handle_update_cmd(Table_t *table, Command_t *cmd) {
 		printf("%s\n",cmd->upd_args.upd_args.str);
 	printf("%ld\n",cmd->upd_args.upd_args.num);
 	*/
+	size_t pri_idx = 0;
+	unsigned int pri_id = 0;
+	int pri_enterwhere = 1;
 	for (idx = 0;idx<table->len;idx++){
 		if(check_condition(cmd,table,idx)){
 			User_t *temp_user = get_User(table,idx);
 			if( !strncmp(cmd->upd_args.upd_args.fields,"id",2)){
-				temp_user->id = cmd->upd_args.upd_args.num;
+				//make sure no replicate primary_key
+				if(pri_enterwhere>0){
+					
+					size_t check_idx = 0;
+					int check_signal = 1;
+					for(check_idx = 0;check_idx<table->len;check_idx++){
+						User_t *check_user = get_User(table,check_idx);
+						if(check_user->id == cmd->upd_args.upd_args.num && check_idx!=idx)
+							check_signal = 0;
+					}
+					if(check_signal){
+						pri_idx = idx;
+						pri_id = cmd->upd_args.upd_args.num;
+						temp_user->id = cmd->upd_args.upd_args.num;
+						pri_enterwhere--;
+					}
+					
+				}
+				else{
+					User_t *pri_user = get_User(table,pri_idx);
+					pri_user->id = pri_id;
+				}
 			} else if(!strncmp(cmd->upd_args.upd_args.fields,"age",3)){
 				temp_user->age = cmd->upd_args.upd_args.num;
 			} else if(!strncmp(cmd->upd_args.upd_args.fields,"name",4)){
