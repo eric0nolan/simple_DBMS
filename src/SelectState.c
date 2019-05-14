@@ -210,7 +210,7 @@ void where_state_handler(Command_t *cmd,size_t arg_idx){
 	add_where_field(cmd,cmd->args[arg_idx]);
 	if ( !strncmp(cmd->args[arg_idx],"id",2) || !strncmp(cmd->args[arg_idx],"age",3) ){
 	     arg_idx++;
-             if(!strncmp(cmd->args[arg_idx],"=",1)){
+         if(!strncmp(cmd->args[arg_idx],"=",1)){
 	          cmd->whe_args.whe_args.op_type1 = equalto;
 	     } else if(!strncmp(cmd->args[arg_idx],"!=",2)){
 	          cmd->whe_args.whe_args.op_type1 = notEqualto;
@@ -243,10 +243,10 @@ void where_state_handler(Command_t *cmd,size_t arg_idx){
 	     	cmd->whe_args.whe_args.op_num = orOp;
 	     } else if(!strncmp(cmd->args[arg_idx],"offset",6)){
 	        offset_state_handler(cmd,arg_idx+1);
-		return;
+			return;
 	     } else if(!strncmp(cmd->args[arg_idx],"limit",5)){
 	     	limit_state_handler(cmd,arg_idx+1);
-		return;
+			return;
 	     }
 	     arg_idx++;
 	     if(cmd->whe_args.whe_args.op_num==andOp || cmd->whe_args.whe_args.op_num==orOp){
@@ -279,6 +279,16 @@ void where_state_handler(Command_t *cmd,size_t arg_idx){
 	     	cmd->whe_args.whe_args.string_comp2 = strdup(cmd->args[arg_idx]) ;
 		 }
 	    }
+	 }
+	 arg_idx++;
+	 if(arg_idx < cmd->args_len){
+		 if(!strncmp(cmd->args[arg_idx],"offset",6)){
+	        offset_state_handler(cmd,arg_idx+1);
+			return;
+	     } else if(!strncmp(cmd->args[arg_idx],"limit",5)){
+	     	limit_state_handler(cmd,arg_idx+1);
+			return;
+	     }
 	 }
     }
     cmd->type = UNRECOG_CMD;

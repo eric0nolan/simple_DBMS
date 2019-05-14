@@ -98,34 +98,45 @@ void print_users(Table_t *table, int *idxList, size_t idxListLen, Command_t *cmd
 	
 	
     if (idxList) {
+		int offset_count = offset;
         for (idx = offset; idx < idxListLen; idx++) {
-            if (limit != -1 && (idx - offset) >= limit) {
+            if (limit != -1 && (int)idx - (int)offset >= (int)limit) {
                 break;
             }
 			if(check_condition(cmd,table,idx)){
-				print_user(get_User(table, idxList[idx]), &(cmd->cmd_args.sel_args));
+				offset_count--;
+				if(offset_count<0)
+					print_user(get_User(table, idx), &(cmd->cmd_args.sel_args));
 			}
 			else{
-				if(limit != -1 )
+				if(limit != -1 && offset == 0){
 					limit++; 
-				if(offset != 0)
-					offset++;
+				}
+				else if(offset != 0 && limit != -1){
+					limit++;
+				}
 			}
 				
         }
     } else {
-        for (idx = offset; idx < table->len; idx++) {
-            if (limit != -1 && (idx - offset) >= limit) {
+		int offset_count = offset;
+        for (idx = 0; idx < table->len; idx++) {
+            if (limit != -1 && (int)idx - (int)offset >= (int)limit) {
                 break;
             }
 			if(check_condition(cmd,table,idx)){
-				print_user(get_User(table, idx), &(cmd->cmd_args.sel_args));
+				offset_count--;
+				if(offset_count<0)
+					print_user(get_User(table, idx), &(cmd->cmd_args.sel_args));
 			}
 			else{
-				if(limit != -1 )
+				if(limit != -1 && offset == 0){
 					limit++; 
-				if(offset != 0)
-					offset++;
+				}
+				else if(offset != 0 && limit != -1){
+					limit++;
+				}
+				//printf("offset:%d\n",offset);
 			}
         }
     }
