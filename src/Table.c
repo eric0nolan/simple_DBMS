@@ -63,6 +63,48 @@ int add_User(Table_t *table, User_t *user) {
     table->len++;
     return 1;
 }
+int minus_User(Table_t *table, size_t idx) {
+    if (!table) {
+        return 0;
+    }
+	User_t *usr_ptr = get_User(table, idx);
+	usr_ptr->id = MAX_int;
+    return 1;
+}
+int rearrange_user(Table_t *table) {
+    if (!table) {
+        return 0;
+    }
+	size_t idx = 0;
+	size_t new_idx = 0;
+	size_t minus_count = 0;
+	User_t *usr_ptr = NULL;
+	
+	User_t *new_user_buf = (User_t*)malloc(sizeof(User_t)*(table->capacity));
+    unsigned char *new_cache_buf = (unsigned char *)malloc(sizeof(unsigned char)*(table->capacity));
+    memset(new_cache_buf, 0, sizeof(unsigned char)*(table->len));
+    memcpy(new_cache_buf, table->cache_map, sizeof(unsigned char)*table->len);
+
+	for(idx = 0;idx<table->len;idx++){
+		usr_ptr = get_User(table, idx);
+		if(usr_ptr->id != MAX_int){
+			memcpy(new_user_buf + new_idx,usr_ptr,sizeof(User_t));
+			memcpy(new_cache_buf + new_idx, table->cache_map + sizeof(unsigned char) * idx, sizeof(unsigned char));
+			new_idx++;
+			/*
+			printf("usr_ptr->id:%d ",usr_ptr->id);
+			User_t * test_ptr = NULL;
+			test_ptr = new_user_buf -1 + new_idx;
+			printf("new_user_buf_id:%d\n",test_ptr->id);
+			*/
+		}
+		else minus_count++;
+	}
+	table->users = new_user_buf;
+    table->cache_map = new_cache_buf;
+	table->len -= minus_count;
+    return 1;
+}
 
 ///
 /// Return value is the archived table len

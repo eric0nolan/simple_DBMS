@@ -28,6 +28,10 @@ int main(int argc, char **argv) {
             handle_builtin_cmd(table, cmd, state);
         } else if (cmd_type == QUERY_CMD) {
             handle_query_cmd(table, cmd);
+        } else if (cmd_type == UPDATE_CMD) {
+            handle_update_cmd(table, cmd);	
+        } else if (cmd_type == DELETE_CMD) {
+            handle_delete_cmd(table, cmd);
         } else if (cmd_type == UNRECOG_CMD) {
             printf("Unrecognized command '%s'.\n", input_buffer->buffer);
         }

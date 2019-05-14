@@ -5,6 +5,8 @@ enum {
     UNRECOG_CMD,
     BUILT_IN_CMD,
     QUERY_CMD,
+	UPDATE_CMD,
+	DELETE_CMD,
 };
 
 enum {
@@ -27,6 +29,13 @@ enum {
     lessOrEqualto,
     stringEqualto,
     stringNotEqualto,
+};
+
+enum {
+	none = 3001,
+    sum,
+	count,
+	avg,
 };
 
 typedef struct {
@@ -56,6 +65,17 @@ typedef struct WhereArgs {
     size_t op_num;//the number of operator, means and or,  for only one condition, 1 for and condition, 2 for or condition
 }WhereArgs_t;
 
+typedef struct AggeArgs {
+    char * fields;
+    size_t agge_type;
+}AggeArgs_t;
+
+typedef struct UpdArgs {
+    char * fields;
+    char * str;
+	size_t num;
+}UpdArgs_t;
+
 typedef union {
     SelectArgs_t sel_args;
 } CmdArg_t;
@@ -64,6 +84,14 @@ typedef union{
     WhereArgs_t whe_args;
 } WheArg_t;
 
+typedef union{
+    AggeArgs_t agge_args;
+} AggeArg_t;
+
+typedef union{
+    UpdArgs_t upd_args;
+} UpdArg_t;
+
 typedef struct Command {
     unsigned char type;
     char **args;
@@ -71,12 +99,16 @@ typedef struct Command {
     size_t args_cap;
     CmdArg_t cmd_args;
     WheArg_t whe_args;
+	AggeArg_t agge_args;
+	UpdArg_t upd_args;
 } Command_t;
 
 Command_t* new_Command();
 int add_Arg(Command_t *cmd, const char *arg);
 int add_select_field(Command_t *cmd, const char *argument);
 int add_where_field(Command_t *cmd, const char *argument);
+int add_agge_field(Command_t *cmd, const char *argument);
+int add_update_field(Command_t *cmd, const char *argument);
 void cleanup_Command(Command_t *cmd);
 
 #endif

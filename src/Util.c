@@ -79,13 +79,24 @@ void print_users(Table_t *table, int *idxList, size_t idxListLen, Command_t *cmd
     printf("%ld\n",cmd->whe_args.whe_args.num_comp1);
     printf("%ld\n",cmd->whe_args.whe_args.num_comp2);
     printf("%ld\n",cmd->whe_args.whe_args.op_num);
-
-
-    */
+*/
+	/*if(cmd->agge_args.agge_args.fields)
+		printf("agge_field:%s\n",cmd->agge_args.agge_args.fields);
+	printf("agge_type:%ld\n",cmd->agge_args.agge_args.agge_type);
+*/
+    
     if (offset == -1) {
         offset = 0;
     }
 
+	//the aggregate function
+	if(cmd->agge_args.agge_args.agge_type!=none){
+		print_agge(table,idxList,idxListLen,cmd);
+		return;
+	}
+	//end of the aggregate function
+	
+	
     if (idxList) {
         for (idx = offset; idx < idxListLen; idx++) {
             if (limit != -1 && (idx - offset) >= limit) {
@@ -105,26 +116,213 @@ void print_users(Table_t *table, int *idxList, size_t idxListLen, Command_t *cmd
     }
 }
 
-int void check_condition(Command_t *cmd, Table_t *table,size_t idx){
-    User_t *temp_user = NULL;
-    if(cmd->whe_args.whe_args.fields_len == 0)
-	return 1;
-    else if(cmd->whe_args.whe_args.fields_len >0){
-	temp_user = get_User(table,idx);
-	if(cmd->whe.args.whe_args.op_type1 == stringEqualto || cmd->whe.args.whe_args.op_type1 == stringNotEqualto){
-	   if(!strncmp(cmd->whe_args.whe_args.fields[0],"name",4)){
-	   
-	   } else if (!strncmp(cmd->whe_args.whe_args.fields[1],"email",5)){
-	   
-	   }
-	} else{
+void print_agge(Table_t *table, int *idxList, size_t idxListLen, Command_t *cmd){
+	if(cmd->agge_args.agge_args.agge_type == sum){
+		int result_sumId = 0;
+		int result_sumAge = 0;
+		size_t idx = 0;
+		User_t *temp_user = NULL;
+		for (idx = 0; idx < table->len; idx++) {
+			temp_user = get_User(table, idx);
+			if(check_condition(cmd,table,idx)){
+				if(!strncmp(cmd->agge_args.agge_args.fields,"id",2)){
+					result_sumId += temp_user->id;
+				} else if(!strncmp(cmd->agge_args.agge_args.fields,"age",3))
+					result_sumAge += temp_user->age;
+			}
+		}
+		if(!strncmp(cmd->agge_args.agge_args.fields,"id",2))
+			printf("(%d)\n",result_sumId);
+		else if(!strncmp(cmd->agge_args.agge_args.fields,"age",3))
+			printf("(%d)\n",result_sumAge);
+	} else if(cmd->agge_args.agge_args.agge_type == avg){
+		double result_avgId = 0;
+		double result_avgAge = 0;
+		size_t idx = 0;
+		int base = 0;
+		User_t *temp_user = NULL;
+		for (idx = 0; idx < table->len; idx++) {
+			temp_user = get_User(table, idx);
+			if(check_condition(cmd,table,idx)){
+				base++;
+				if(!strncmp(cmd->agge_args.agge_args.fields,"id",2)){
+					result_avgId += temp_user->id;
+				} else if(!strncmp(cmd->agge_args.agge_args.fields,"age",3))
+					result_avgAge += temp_user->age;
+			}
+		}
+		result_avgId/=base;
+		result_avgAge/=base;
+		if(!strncmp(cmd->agge_args.agge_args.fields,"id",2))
+			printf("(%.3f)\n",result_avgId);
+		else if(!strncmp(cmd->agge_args.agge_args.fields,"age",3))
+			printf("(%.3f)\n",result_avgAge);
+	} else if(cmd->agge_args.agge_args.agge_type == count){
+		int count = 0;
+		size_t idx = 0;
+		for (idx = 0; idx < table->len; idx++) {
+			if(check_condition(cmd,table,idx)){
+				count++;
+			}
+		}
+		printf("(%d)\n",count);
+	}
 	
-	}
-	if(cmd->whe_args.whe_args.fields_len ==2){
+	
+}
 
+int check_condition(Command_t *cmd, Table_t *table,size_t idx){
+    User_t *temp_user = NULL;
+	size_t result1  = 0;
+	size_t result2  = 0;
+    if(cmd->whe_args.whe_args.fields_len == 0){
+		return 1;
+	} else if(cmd->whe_args.whe_args.fields_len > 0 ){
+		temp_user = get_User(table,idx);
+		if(cmd->whe_args.whe_args.op_type1 == stringEqualto || cmd->whe_args.whe_args.op_type1 == stringNotEqualto){
+			if(!strncmp(cmd->whe_args.whe_args.fields[0],"name",4)){
+				if(cmd->whe_args.whe_args.op_type1 == stringEqualto){
+					if( !strcmp(cmd->whe_args.whe_args.string_comp1,temp_user->name) ){
+						result1 = 1;}
+					} else if(cmd->whe_args.whe_args.op_type1 == stringNotEqualto){
+						if( strcmp(cmd->whe_args.whe_args.string_comp1,temp_user->name) ){
+							result1 = 1;}
+					}
+				} else if (!strncmp(cmd->whe_args.whe_args.fields[0],"email",5)){
+					if(cmd->whe_args.whe_args.op_type1 == stringEqualto){
+						if( !strcmp(cmd->whe_args.whe_args.string_comp1,temp_user->email) ){
+							result1 = 1;}
+						} else if(cmd->whe_args.whe_args.op_type1 == stringNotEqualto){
+							if( strcmp(cmd->whe_args.whe_args.string_comp1,temp_user->email) ){
+								result1 = 1;}
+					}	
+			}
+		}
+		//the num comparison
+		else if(cmd->whe_args.whe_args.op_type1 >= equalto && cmd->whe_args.whe_args.op_type1 <= lessOrEqualto){
+			//id check
+			if(!strncmp(cmd->whe_args.whe_args.fields[0],"id",2)){
+				if(cmd->whe_args.whe_args.op_type1 == equalto){
+					if( temp_user->id == cmd->whe_args.whe_args.num_comp1) {
+						result1 = 1;}
+					} else if(cmd->whe_args.whe_args.op_type1 == notEqualto){
+						if( temp_user->id != cmd->whe_args.whe_args.num_comp1) {
+							result1 = 1;}
+					} else if(cmd->whe_args.whe_args.op_type1 == greater){
+						if( temp_user->id > cmd->whe_args.whe_args.num_comp1) {
+							result1 = 1;}
+					} else if(cmd->whe_args.whe_args.op_type1 == less){
+						if( temp_user->id < cmd->whe_args.whe_args.num_comp1) {
+							result1 = 1;}
+					} else if(cmd->whe_args.whe_args.op_type1 == greaterOrEqualto){
+						if( temp_user->id >= cmd->whe_args.whe_args.num_comp1) {
+							result1 = 1;}
+					} else if(cmd->whe_args.whe_args.op_type1 == lessOrEqualto){
+						if( temp_user->id <= cmd->whe_args.whe_args.num_comp1) {
+							result1 = 1;}
+					} 
+					//age 
+				} else if (!strncmp(cmd->whe_args.whe_args.fields[0],"age",3)){
+					if(cmd->whe_args.whe_args.op_type1 == equalto){
+						if( temp_user->age == cmd->whe_args.whe_args.num_comp1) {
+							result1 = 1;}
+						} else if(cmd->whe_args.whe_args.op_type1 == notEqualto){
+							if( temp_user->age != cmd->whe_args.whe_args.num_comp1) {
+								result1 = 1;}
+						} else if(cmd->whe_args.whe_args.op_type1 == greater){
+							if( temp_user->age > cmd->whe_args.whe_args.num_comp1) {
+								result1 = 1;}
+						} else if(cmd->whe_args.whe_args.op_type1 == less){
+							if( temp_user->age < cmd->whe_args.whe_args.num_comp1) {
+								result1 = 1;}
+						} else if(cmd->whe_args.whe_args.op_type1 == greaterOrEqualto){
+							if( temp_user->age >= cmd->whe_args.whe_args.num_comp1) {
+								result1 = 1;}
+						} else if(cmd->whe_args.whe_args.op_type1 == lessOrEqualto){
+							if( temp_user->age <= cmd->whe_args.whe_args.num_comp1){
+								result1 = 1;}
+					}	
+			}
+		}
+		//return result1;
+		//the second where judge
+	} 
+	if(cmd->whe_args.whe_args.fields_len == 1)
+		return result1;
+	if(cmd->whe_args.whe_args.fields_len == 2){
+		temp_user = get_User(table,idx);
+		if(cmd->whe_args.whe_args.op_type2 == stringEqualto || cmd->whe_args.whe_args.op_type2 == stringNotEqualto){
+			if(!strncmp(cmd->whe_args.whe_args.fields[1],"name",4)){
+				if(cmd->whe_args.whe_args.op_type2 == stringEqualto){
+					if( !strcmp(cmd->whe_args.whe_args.string_comp2,temp_user->name) ){
+						result2 = 1;}
+					} else if(cmd->whe_args.whe_args.op_type2 == stringNotEqualto){
+						if( strcmp(cmd->whe_args.whe_args.string_comp2,temp_user->name) ){
+							result2 = 1;}
+					}
+				} else if (!strncmp(cmd->whe_args.whe_args.fields[1],"email",5)){
+					if(cmd->whe_args.whe_args.op_type2 == stringEqualto){
+						if( !strcmp(cmd->whe_args.whe_args.string_comp2,temp_user->email) ){
+							result2 = 1;}
+						} else if(cmd->whe_args.whe_args.op_type2 == stringNotEqualto){
+							if( strcmp(cmd->whe_args.whe_args.string_comp2,temp_user->email) ){
+								result2 = 1;}
+					}	
+			}
+		}
+		//the num comparison
+		else if(cmd->whe_args.whe_args.op_type2 >= equalto && cmd->whe_args.whe_args.op_type2 <= lessOrEqualto){
+			//id check
+			if(!strncmp(cmd->whe_args.whe_args.fields[1],"id",2)){
+				if(cmd->whe_args.whe_args.op_type2 == equalto){
+					if( temp_user->id == cmd->whe_args.whe_args.num_comp2) {
+						result2 = 1;}
+					} else if(cmd->whe_args.whe_args.op_type2 == notEqualto){
+						if( temp_user->id != cmd->whe_args.whe_args.num_comp2) {
+							result2 = 1;}
+					} else if(cmd->whe_args.whe_args.op_type2 == greater){
+						if( temp_user->id > cmd->whe_args.whe_args.num_comp2) {
+							result2 = 1;}
+					} else if(cmd->whe_args.whe_args.op_type2 == less){
+						if( temp_user->id < cmd->whe_args.whe_args.num_comp2) {
+							result2 = 1;}
+					} else if(cmd->whe_args.whe_args.op_type2 == greaterOrEqualto){
+						if( temp_user->id >= cmd->whe_args.whe_args.num_comp2) {
+							result2 = 1;}
+					} else if(cmd->whe_args.whe_args.op_type2 == lessOrEqualto){
+						if( temp_user->id <= cmd->whe_args.whe_args.num_comp2) {
+							result2 = 1;}
+					} 
+					//age 
+				} else if (!strncmp(cmd->whe_args.whe_args.fields[1],"age",3)){
+					if(cmd->whe_args.whe_args.op_type2 == equalto){
+						if( temp_user->age == cmd->whe_args.whe_args.num_comp2) {
+							result2 = 1;}
+						} else if(cmd->whe_args.whe_args.op_type2 == notEqualto){
+							if( temp_user->age != cmd->whe_args.whe_args.num_comp2) {
+								result2 = 1;}
+						} else if(cmd->whe_args.whe_args.op_type2 == greater){
+							if( temp_user->age > cmd->whe_args.whe_args.num_comp2) {
+								result2 = 1;}
+						} else if(cmd->whe_args.whe_args.op_type2 == less){
+							if( temp_user->age < cmd->whe_args.whe_args.num_comp2) {
+								result2 = 1;}
+						} else if(cmd->whe_args.whe_args.op_type2 == greaterOrEqualto){
+							if( temp_user->age >= cmd->whe_args.whe_args.num_comp2) {
+								result2 = 1;}
+						} else if(cmd->whe_args.whe_args.op_type2 == lessOrEqualto){
+							if( temp_user->age <= cmd->whe_args.whe_args.num_comp2){
+								result2 = 1;}
+					}	
+			}
+		}
+		//judge the op_num and return;
+		if(cmd->whe_args.whe_args.op_num == andOp)
+			return (result1 && result2);
+		else if(cmd->whe_args.whe_args.op_num == orOp)
+			return (result1 || result2);
 	}
-    }
-    else return 1; 
+	return 1; 
 }
 
 ///
@@ -224,7 +422,63 @@ int handle_select_cmd(Table_t *table, Command_t *cmd) {
     print_users(table, NULL, 0, cmd);
     return table->len;
 }
+int handle_update_cmd(Table_t *table, Command_t *cmd) {
+	cmd->type = UPDATE_CMD;
+	update_state_handler(cmd, 1);
+    size_t idx =0;
+	/*
+	if(cmd->upd_args.upd_args.fields)
+		printf("%s\n",cmd->upd_args.upd_args.fields);
+	if(cmd->upd_args.upd_args.str)
+		printf("%s\n",cmd->upd_args.upd_args.str);
+	printf("%ld\n",cmd->upd_args.upd_args.num);
+	*/
+	for (idx = 0;idx<table->len;idx++){
+		if(check_condition(cmd,table,idx)){
+			User_t *temp_user = get_User(table,idx);
+			if( !strncmp(cmd->upd_args.upd_args.fields,"id",2)){
+				temp_user->id = cmd->upd_args.upd_args.num;
+			} else if(!strncmp(cmd->upd_args.upd_args.fields,"age",3)){
+				temp_user->age = cmd->upd_args.upd_args.num;
+			} else if(!strncmp(cmd->upd_args.upd_args.fields,"name",4)){
+				strncpy(temp_user->name, cmd->upd_args.upd_args.str, MAX_USER_NAME);
+			} else if(!strncmp(cmd->upd_args.upd_args.fields,"email",5)){
+				strncpy(temp_user->email, cmd->upd_args.upd_args.str, MAX_USER_NAME);
+			}	
+		}
+	}
+    return table->len;
+}
 
+int handle_delete_cmd(Table_t *table, Command_t *cmd) {
+	cmd->type = DELETE_CMD;
+	delete_state_handler(cmd, 1);
+    size_t idx =0;
+	/*
+    for(idx = 0;idx<cmd->whe_args.whe_args.fields_len;idx++){
+	   printf("field:%s\n",cmd->whe_args.whe_args.fields[idx]); 
+    }
+    printf("%ld\n",cmd->whe_args.whe_args.fields_len);
+    printf("%ld\n",cmd->whe_args.whe_args.op_type1);
+    printf("%ld\n",cmd->whe_args.whe_args.op_type2);
+    printf("HELLO1\n");
+    if(cmd->whe_args.whe_args.string_comp1)
+    	printf("%s\n",cmd->whe_args.whe_args.string_comp1);
+    if(cmd->whe_args.whe_args.string_comp2)
+	printf("%s\n",cmd->whe_args.whe_args.string_comp2);
+    printf("HELLO2\n");
+    printf("%ld\n",cmd->whe_args.whe_args.num_comp1);
+    printf("%ld\n",cmd->whe_args.whe_args.num_comp2);
+    printf("%ld\n",cmd->whe_args.whe_args.op_num);
+*/
+	for(idx = 0;idx<table->len;idx++){
+		if(check_condition(cmd,table,idx))
+			minus_User(table, idx) ;
+	}
+	rearrange_user(table);
+	
+    return table->len;
+}
 ///
 /// Show the help messages
 ///

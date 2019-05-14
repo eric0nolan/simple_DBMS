@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "Command.h"
-
+#include <stdio.h>
 CMD_t cmd_list[] = {
     { ".exit", 5, BUILT_IN_CMD },
     { ".output", 7, BUILT_IN_CMD },
@@ -9,6 +9,8 @@ CMD_t cmd_list[] = {
     { ".help", 5, BUILT_IN_CMD },
     { "insert", 6, QUERY_CMD },
     { "select", 6, QUERY_CMD },
+	{ "update", 6, UPDATE_CMD },
+	{ "delete", 6, DELETE_CMD },
     { "", 0, UNRECOG_CMD },
 };
 
@@ -96,6 +98,16 @@ int add_where_field(Command_t *cmd, const char *argument) {
     cmd->whe_args.whe_args.fields[fields_len] = strdup(argument);
     cmd->whe_args.whe_args.fields_len++;
     return 1;
+}
+
+int add_agge_field(Command_t *cmd, const char *argument) {
+    cmd->agge_args.agge_args.fields = strdup(argument);
+    return 1;
+}
+
+int add_update_field(Command_t *cmd, const char *argument){
+	cmd->upd_args.upd_args.fields = strdup(argument);
+	return 1;
 }
 ///
 /// Free the allocated arguments, but without free the argument buffer
