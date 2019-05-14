@@ -66,8 +66,12 @@ typedef struct WhereArgs {
 }WhereArgs_t;
 
 typedef struct AggeArgs {
-    char * fields;
-    size_t agge_type;
+	//set fields to multiple
+	//set fields_len
+    char ** fields;
+	size_t fields_len;
+	//set the type to multiple
+    size_t agge_type[256];
 }AggeArgs_t;
 
 typedef struct UpdArgs {

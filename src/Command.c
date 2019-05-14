@@ -101,7 +101,22 @@ int add_where_field(Command_t *cmd, const char *argument) {
 }
 
 int add_agge_field(Command_t *cmd, const char *argument) {
-    cmd->agge_args.agge_args.fields = strdup(argument);
+	
+	size_t fields_len = cmd->agge_args.agge_args.fields_len;
+    char **buf = (char**)malloc(sizeof(char*) * (fields_len+1));
+    if (buf == NULL) {
+        return 0;
+    }
+
+    if (cmd->agge_args.agge_args.fields) {
+        memcpy(buf, cmd->agge_args.agge_args.fields, sizeof(char*) * fields_len);
+        free(cmd->agge_args.agge_args.fields);
+    }
+
+    cmd->agge_args.agge_args.fields = buf;
+    cmd->agge_args.agge_args.fields[fields_len] = strdup(argument);
+    cmd->agge_args.agge_args.fields_len++;
+	//change to add fields
     return 1;
 }
 

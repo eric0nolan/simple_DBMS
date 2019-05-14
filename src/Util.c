@@ -90,7 +90,7 @@ void print_users(Table_t *table, int *idxList, size_t idxListLen, Command_t *cmd
     }
 
 	//the aggregate function
-	if(cmd->agge_args.agge_args.agge_type!=none){
+	if(cmd->agge_args.agge_args.agge_type[0]!=none){
 		if(offset ==0)
 			print_agge(table,idxList,idxListLen,cmd);
 		return;
@@ -144,56 +144,73 @@ void print_users(Table_t *table, int *idxList, size_t idxListLen, Command_t *cmd
 }
 
 void print_agge(Table_t *table, int *idxList, size_t idxListLen, Command_t *cmd){
-	if(cmd->agge_args.agge_args.agge_type == sum){
-		int result_sumId = 0;
-		int result_sumAge = 0;
-		size_t idx = 0;
-		User_t *temp_user = NULL;
-		for (idx = 0; idx < table->len; idx++) {
-			temp_user = get_User(table, idx);
-			if(check_condition(cmd,table,idx)){
-				if(!strncmp(cmd->agge_args.agge_args.fields,"id",2)){
-					result_sumId += temp_user->id;
-				} else if(!strncmp(cmd->agge_args.agge_args.fields,"age",3))
-					result_sumAge += temp_user->age;
+	
+	//first check agge_type then calculate fields in each type, at last output
+	size_t agge_idx = 0;
+	/*for(agge_idx = 0;agge_idx < cmd->agge_args.agge_args.fields_len;agge_idx++){
+		printf("agge_idx:%ld,agge_type:%ld\n",agge_idx,cmd->agge_args.agge_args.agge_type[agge_idx]);
+		printf("agge_idx:%ld,agge_fields:%s\n",agge_idx,cmd->agge_args.agge_args.fields[agge_idx]);
+	}*/
+	printf("(");
+	for(agge_idx = 0 ;agge_idx < cmd->agge_args.agge_args.fields_len;agge_idx++){
+		//
+		if(cmd->agge_args.agge_args.agge_type[agge_idx] == sum){
+			int result_sumId = 0;
+			int result_sumAge = 0;
+			size_t idx = 0;
+			User_t *temp_user = NULL;
+			for (idx = 0; idx < table->len; idx++) {
+				temp_user = get_User(table, idx);
+				if(check_condition(cmd,table,idx)){
+					if(!strncmp(cmd->agge_args.agge_args.fields[agge_idx],"id",2)){
+						result_sumId += temp_user->id;
+					} else if(!strncmp(cmd->agge_args.agge_args.fields[agge_idx],"age",3))
+						result_sumAge += temp_user->age;
+				}
 			}
-		}
-		if(!strncmp(cmd->agge_args.agge_args.fields,"id",2))
-			printf("(%d)\n",result_sumId);
-		else if(!strncmp(cmd->agge_args.agge_args.fields,"age",3))
-			printf("(%d)\n",result_sumAge);
-	} else if(cmd->agge_args.agge_args.agge_type == avg){
-		double result_avgId = 0;
-		double result_avgAge = 0;
-		size_t idx = 0;
-		int base = 0;
-		User_t *temp_user = NULL;
-		for (idx = 0; idx < table->len; idx++) {
-			temp_user = get_User(table, idx);
-			if(check_condition(cmd,table,idx)){
-				base++;
-				if(!strncmp(cmd->agge_args.agge_args.fields,"id",2)){
-					result_avgId += temp_user->id;
-				} else if(!strncmp(cmd->agge_args.agge_args.fields,"age",3))
-					result_avgAge += temp_user->age;
+			if(!strncmp(cmd->agge_args.agge_args.fields[agge_idx],"id",2))
+				printf("%d",result_sumId);
+			else if(!strncmp(cmd->agge_args.agge_args.fields[agge_idx],"age",3))
+				printf("%d",result_sumAge);
+		} else if(cmd->agge_args.agge_args.agge_type[agge_idx]== avg){
+			double result_avgId = 0;
+			double result_avgAge = 0;
+			size_t idx = 0;
+			int base = 0;
+			User_t *temp_user = NULL;
+			for (idx = 0; idx < table->len; idx++) {
+				temp_user = get_User(table, idx);
+				if(check_condition(cmd,table,idx)){
+					base++;
+					if(!strncmp(cmd->agge_args.agge_args.fields[agge_idx],"id",2)){
+						result_avgId += temp_user->id;
+					} else if(!strncmp(cmd->agge_args.agge_args.fields[agge_idx],"age",3))
+						result_avgAge += temp_user->age;
+				}
 			}
-		}
-		result_avgId/=base;
-		result_avgAge/=base;
-		if(!strncmp(cmd->agge_args.agge_args.fields,"id",2))
-			printf("(%.3f)\n",result_avgId);
-		else if(!strncmp(cmd->agge_args.agge_args.fields,"age",3))
-			printf("(%.3f)\n",result_avgAge);
-	} else if(cmd->agge_args.agge_args.agge_type == count){
-		int count = 0;
-		size_t idx = 0;
-		for (idx = 0; idx < table->len; idx++) {
-			if(check_condition(cmd,table,idx)){
-				count++;
+			result_avgId/=base;
+			result_avgAge/=base;
+			if(!strncmp(cmd->agge_args.agge_args.fields[agge_idx],"id",2))
+				printf("%.3f",result_avgId);
+			else if(!strncmp(cmd->agge_args.agge_args.fields[agge_idx],"age",3))
+				printf("%.3f",result_avgAge);
+		} else if(cmd->agge_args.agge_args.agge_type[agge_idx] == count){
+			int count = 0;
+			size_t idx = 0;
+			for (idx = 0; idx < table->len; idx++) {
+				if(check_condition(cmd,table,idx)){
+					count++;
+				}
 			}
+			printf("%d",count);
 		}
-		printf("(%d)\n",count);
+		//
+		if(agge_idx != cmd->agge_args.agge_args.fields_len-1)
+			printf(", ");
 	}
+	printf(")\n");
+	
+	
 	
 	
 }

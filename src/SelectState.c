@@ -20,7 +20,8 @@ void field_state_handler(Command_t *cmd, size_t arg_idx) {
     cmd->whe_args.whe_args.op_num = 0;
 	
 	cmd->agge_args.agge_args.fields = NULL;
-    cmd->agge_args.agge_args.agge_type = none;
+	cmd->agge_args.agge_args.fields_len = 0;
+    cmd->agge_args.agge_args.agge_type[0] = none;
 	
     while(arg_idx < cmd->args_len) {
         if (!strncmp(cmd->args[arg_idx], "*", 1)) {
@@ -88,6 +89,7 @@ void update_state_handler(Command_t *cmd, size_t arg_idx) {
             ;
         } else if (!strncmp(cmd->args[arg_idx], "set", 3)) {
             ;
+			//this is for update
         } else if (!strncmp(cmd->args[arg_idx], "=", 1)) {
             arg_idx++;
 			if(!strncmp(cmd->upd_args.upd_args.fields,"id",2) || !strncmp(cmd->upd_args.upd_args.fields,"age",3)){
@@ -144,13 +146,16 @@ void delete_state_handler(Command_t *cmd, size_t arg_idx) {
 }
 
 void aggregate_state_handler(Command_t *cmd, size_t arg_idx){
+	
+	//convert to the version to add aggregate field, add fields_len, add aggregate type
+	size_t len = cmd->agge_args.agge_args.fields_len;
 	if (arg_idx < cmd->args_len){
 		if(!strncmp(cmd->args[arg_idx], "sum", 3))
-			cmd->agge_args.agge_args.agge_type = sum;
+			cmd->agge_args.agge_args.agge_type[len] = sum;
 		else if(!strncmp(cmd->args[arg_idx], "count", 5))
-			cmd->agge_args.agge_args.agge_type = count;
+			cmd->agge_args.agge_args.agge_type[len] = count;
 		else if(!strncmp(cmd->args[arg_idx], "avg", 3))
-			cmd->agge_args.agge_args.agge_type = avg;
+			cmd->agge_args.agge_args.agge_type[len] = avg;
 		
 		char *pch;
 		pch = strstr(cmd->args[arg_idx] , "(");
@@ -166,7 +171,10 @@ void aggregate_state_handler(Command_t *cmd, size_t arg_idx){
 		else if(!strncmp(pch+1, "age", 3)){
 			add_agge_field(cmd,"age");
 		}
-		arg_idx++;
+		else if(!strncmp(pch+1, "*", 1)){
+			add_agge_field(cmd,"*");
+		}
+		/*arg_idx++;
 		if (arg_idx == cmd->args_len) {
             return;
         } else if(!strncmp(cmd->args[arg_idx],"table",5)){
@@ -181,7 +189,7 @@ void aggregate_state_handler(Command_t *cmd, size_t arg_idx){
         } else if (!strncmp(cmd->args[arg_idx], "limit", 5)) {
             limit_state_handler(cmd, arg_idx+1);
             return;
-        }
+        }*/
 	}
 }
 void table_state_handler(Command_t *cmd, size_t arg_idx) {
