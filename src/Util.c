@@ -102,16 +102,31 @@ void print_users(Table_t *table, int *idxList, size_t idxListLen, Command_t *cmd
             if (limit != -1 && (idx - offset) >= limit) {
                 break;
             }
-	    if(check_condition(cmd,table,idx))
-            	print_user(get_User(table, idxList[idx]), &(cmd->cmd_args.sel_args));
+			if(check_condition(cmd,table,idx)){
+				print_user(get_User(table, idxList[idx]), &(cmd->cmd_args.sel_args));
+			}
+			else{
+				if(limit != -1 )
+					limit++; 
+				if(offset != 0)
+					offset++;
+			}
+				
         }
     } else {
         for (idx = offset; idx < table->len; idx++) {
             if (limit != -1 && (idx - offset) >= limit) {
                 break;
             }
-	    if(check_condition(cmd,table,idx))
-            	print_user(get_User(table, idx), &(cmd->cmd_args.sel_args));
+			if(check_condition(cmd,table,idx)){
+				print_user(get_User(table, idx), &(cmd->cmd_args.sel_args));
+			}
+			else{
+				if(limit != -1 )
+					limit++; 
+				if(offset != 0)
+					offset++;
+			}
         }
     }
 }
