@@ -54,11 +54,27 @@ void print_user(User_t *user, SelectArgs_t *sel_args) {
     }
     printf(")\n");
 }
-
+void print_like(Like_t *like, SelectArgs_t *sel_args) {
+    size_t idx;
+    printf("(");
+    for (idx = 0; idx < sel_args->fields_len; idx++) {
+        if (!strncmp(sel_args->fields[idx], "*", 1)) {
+            printf("%d, %d", like->id1,like->id2);
+        } else {
+            if (idx > 0) printf(", ");
+            if (!strncmp(sel_args->fields[idx], "id1", 3)) {
+                printf("%d", like->id1);
+            } else if (!strncmp(sel_args->fields[idx], "id2", 3)) {
+                printf("%d", like->id2);
+            }
+        }
+    }
+    printf(")\n");
+}
 ///
 /// Print the users for given offset and limit restriction
 ///
-void print_users(Table_t *table, int *idxList, size_t idxListLen, Command_t *cmd) {
+void print_users(Table_t *table,TableLike_t *tablelike, int *idxList, size_t idxListLen, Command_t *cmd) {
     size_t idx;
     int limit = cmd->cmd_args.sel_args.limit;
     int offset = cmd->cmd_args.sel_args.offset;
@@ -92,13 +108,13 @@ void print_users(Table_t *table, int *idxList, size_t idxListLen, Command_t *cmd
 	//the aggregate function
 	if(cmd->agge_args.agge_args.agge_type[0]!=none){
 		if(offset ==0)
-			print_agge(table,idxList,idxListLen,cmd);
+			print_agge(table,tablelike,idxList,idxListLen,cmd);
 		return;
 	}
 	//end of the aggregate function
 	
 	
-    if (idxList) {
+    /*if (idxList) {
 		int offset_count = offset;
         for (idx = offset; idx < idxListLen; idx++) {
             if (limit != -1 && (int)idx - (int)offset >= (int)limit) {
@@ -118,6 +134,27 @@ void print_users(Table_t *table, int *idxList, size_t idxListLen, Command_t *cmd
 				}
 			}
 				
+        }*/
+	if(cmd->user_or_like == LIKETABLE){
+		int offset_count = offset;
+        for (idx = 0; idx < tablelike->len; idx++) {
+            if (limit != -1 && (int)idx - (int)offset >= (int)limit) {
+                break;
+            }
+			//if(check_condition(cmd,tablelike,idx)){
+				offset_count--;
+				if(offset_count<0)
+					print_like(get_Like(tablelike, idx), &(cmd->cmd_args.sel_args));
+			//}
+			else{
+				if(limit != -1 && offset == 0){
+					limit++; 
+				}
+				else if(offset != 0 && limit != -1){
+					limit++;
+				}
+				//printf("offset:%d\n",offset);
+			}
         }
     } else {
 		int offset_count = offset;
@@ -143,15 +180,73 @@ void print_users(Table_t *table, int *idxList, size_t idxListLen, Command_t *cmd
     }
 }
 
-void print_agge(Table_t *table, int *idxList, size_t idxListLen, Command_t *cmd){
+void print_agge(Table_t *table, TableLike_t *tablelike,int *idxList, size_t idxListLen, Command_t *cmd){
 	
 	//first check agge_type then calculate fields in each type, at last output
 	size_t agge_idx = 0;
-	/*for(agge_idx = 0;agge_idx < cmd->agge_args.agge_args.fields_len;agge_idx++){
+	for(agge_idx = 0;agge_idx < cmd->agge_args.agge_args.fields_len;agge_idx++){
 		printf("agge_idx:%ld,agge_type:%ld\n",agge_idx,cmd->agge_args.agge_args.agge_type[agge_idx]);
 		printf("agge_idx:%ld,agge_fields:%s\n",agge_idx,cmd->agge_args.agge_args.fields[agge_idx]);
-	}*/
+	}
+	
 	printf("(");
+	
+	if(cmd->user_or_like == LIKETABLE){
+		for(agge_idx = 0 ;agge_idx < cmd->agge_args.agge_args.fields_len;agge_idx++){
+		//
+		if(cmd->agge_args.agge_args.agge_type[agge_idx] == sum){
+			int result_sumId1 = 0;
+			int result_sumId2 = 0;
+			size_t idx = 0;
+			Like_t *temp_like = NULL;
+			for (idx = 0; idx < tablelike->len; idx++) {
+				temp_like = get_Like(tablelike, idx);
+				if(!strncmp(cmd->agge_args.agge_args.fields[agge_idx],"id1",3)){
+					result_sumId1 += temp_like->id1;
+				} else if(!strncmp(cmd->agge_args.agge_args.fields[agge_idx],"id2",3))
+					result_sumId2 += temp_like->id2;
+			}
+			if(!strncmp(cmd->agge_args.agge_args.fields[agge_idx],"id1",3))
+				printf("%d",result_sumId1);
+			else if(!strncmp(cmd->agge_args.agge_args.fields[agge_idx],"id3",3))
+				printf("%d",result_sumId2);
+		} else if(cmd->agge_args.agge_args.agge_type[agge_idx]== avg){
+			double result_avgId1 = 0;
+			double result_avgId2 = 0;
+			size_t idx = 0;
+			int base = 0;
+			Like_t *temp_like = NULL;
+			for (idx = 0; idx < tablelike->len; idx++) {
+				temp_like = get_Like(tablelike, idx);
+				base++;
+				if(!strncmp(cmd->agge_args.agge_args.fields[agge_idx],"id1",3)){
+					result_avgId1 += temp_like->id1;
+				} else if(!strncmp(cmd->agge_args.agge_args.fields[agge_idx],"id2",3))
+					result_avgId2 += temp_like->id2;
+			}
+			result_avgId1/=base;
+			result_avgId2/=base;
+			if(!strncmp(cmd->agge_args.agge_args.fields[agge_idx],"id1",2))
+				printf("%.3f",result_avgId1);
+			else if(!strncmp(cmd->agge_args.agge_args.fields[agge_idx],"id2",3))
+				printf("%.3f",result_avgId2);
+		} else if(cmd->agge_args.agge_args.agge_type[agge_idx] == count){
+			int count = 0;
+			size_t idx = 0;
+			for (idx = 0; idx < tablelike->len; idx++)
+				count++;
+			printf("%d",count);
+		}
+		//
+		if(agge_idx != cmd->agge_args.agge_args.fields_len-1)
+			printf(", ");
+	}
+		
+		
+		printf(")\n");
+		return;
+	}
+	
 	for(agge_idx = 0 ;agge_idx < cmd->agge_args.agge_args.fields_len;agge_idx++){
 		//
 		if(cmd->agge_args.agge_args.agge_type[agge_idx] == sum){
@@ -393,9 +488,10 @@ int parse_input(char *input, Command_t *cmd) {
 /// Handle built-in commands
 /// Return: command type
 ///
-void handle_builtin_cmd(Table_t *table, Command_t *cmd, State_t *state) {
+void handle_builtin_cmd(Table_t *table, TableLike_t *tablelike,Command_t *cmd, State_t *state) {
     if (!strncmp(cmd->args[0], ".exit", 5)) {
         archive_table(table);
+		archive_tablelike(tablelike);
         exit(0);
     } else if (!strncmp(cmd->args[0], ".output", 7)) {
         if (cmd->args_len == 2) {
@@ -425,12 +521,21 @@ void handle_builtin_cmd(Table_t *table, Command_t *cmd, State_t *state) {
 /// Handle query type commands
 /// Return: command type
 ///
-int handle_query_cmd(Table_t *table, Command_t *cmd) {
+int handle_query_cmd(Table_t *table,TableLike_t *tablelike, Command_t *cmd) {
     if (!strncmp(cmd->args[0], "insert", 6)) {
-        handle_insert_cmd(table, cmd);
-        return INSERT_CMD;
+		if(!strncmp(cmd->args[2],"user",4)){
+			handle_insert_cmd(table, cmd);
+			return INSERT_CMD;
+		}
+		else if(!strncmp(cmd->args[2],"like",4)){
+			handle_insertlike_cmd(tablelike, cmd);
+			return INSERT_CMD;
+		}
+        else{
+			return UNRECOG_CMD;
+		}
     } else if (!strncmp(cmd->args[0], "select", 6)) {
-        handle_select_cmd(table, cmd);
+        handle_select_cmd(table,tablelike, cmd);
         return SELECT_CMD;
     } else {
         return UNRECOG_CMD;
@@ -453,17 +558,27 @@ int handle_insert_cmd(Table_t *table, Command_t *cmd) {
     }
     return ret;
 }
-
+int handle_insertlike_cmd(TableLike_t *tablelike, Command_t *cmd) {
+    int ret = 0;
+    Like_t *like = command_to_Like(cmd);
+    if (like) {
+        ret = add_Like(tablelike, like);
+        if (ret > 0) {
+            cmd->type = INSERT_CMD;
+        }
+    }
+    return ret;
+}
 ///
 /// The return value is the number of rows select from table
 /// If the select operation success, then change the input arg
 /// `cmd->type` to SELECT_CMD
 ///
-int handle_select_cmd(Table_t *table, Command_t *cmd) {
+int handle_select_cmd(Table_t *table,TableLike_t *tablelike, Command_t *cmd) {
     cmd->type = SELECT_CMD;
     field_state_handler(cmd, 1);
 
-    print_users(table, NULL, 0, cmd);
+    print_users(table,tablelike, NULL, 0, cmd);
     return table->len;
 }
 int handle_update_cmd(Table_t *table, Command_t *cmd) {

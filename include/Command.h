@@ -19,7 +19,6 @@ enum {
     andOp,
     orOp,
 };
-
 enum {
     equalto = 2001,
     notEqualto,
@@ -37,7 +36,10 @@ enum {
 	count,
 	avg,
 };
-
+enum {
+	USERTABLE = 4001,
+	LIKETABLE,
+};
 typedef struct {
     char name[256];
     int len;
@@ -101,6 +103,7 @@ typedef struct Command {
     char **args;
     size_t args_len;
     size_t args_cap;
+	size_t user_or_like;
     CmdArg_t cmd_args;
     WheArg_t whe_args;
 	AggeArg_t agge_args;

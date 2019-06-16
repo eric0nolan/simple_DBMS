@@ -17,7 +17,8 @@ CMD_t cmd_list[] = {
 Command_t* new_Command() {
     Command_t *cmd = (Command_t*) malloc(sizeof(Command_t));
     memset(cmd, 0, sizeof(Command_t));
-
+	
+	cmd->user_or_like = USERTABLE;
     cmd->type = UNRECOG_CMD;
     cmd->args = NULL;
     cmd->args_len = 0;

@@ -28,6 +28,10 @@ void field_state_handler(Command_t *cmd, size_t arg_idx) {
             add_select_field(cmd, cmd->args[arg_idx]);
         } else if (!strncmp(cmd->args[arg_idx], "id", 2)) {
             add_select_field(cmd, cmd->args[arg_idx]);
+        } else if (!strncmp(cmd->args[arg_idx], "id1", 3)) {
+            add_select_field(cmd, cmd->args[arg_idx]);
+        } else if (!strncmp(cmd->args[arg_idx], "id2", 3)) {
+            add_select_field(cmd, cmd->args[arg_idx]);
         } else if (!strncmp(cmd->args[arg_idx], "name", 4)) {
             add_select_field(cmd, cmd->args[arg_idx]);
         } else if (!strncmp(cmd->args[arg_idx], "email", 5)) {
@@ -85,7 +89,7 @@ void update_state_handler(Command_t *cmd, size_t arg_idx) {
             add_update_field(cmd, "email");
         } else if (!strncmp(cmd->args[arg_idx], "age", 3)) {
             add_update_field(cmd, "age");
-        } else if (!strncmp(cmd->args[arg_idx], "table", 5)) {
+        } else if (!strncmp(cmd->args[arg_idx], "user", 4)) {
             ;
         } else if (!strncmp(cmd->args[arg_idx], "set", 3)) {
             ;
@@ -126,7 +130,7 @@ void delete_state_handler(Command_t *cmd, size_t arg_idx) {
 	
 	//keep using the select function
 	while(arg_idx < cmd->args_len) {
-        if (!strncmp(cmd->args[arg_idx], "table", 5)) {
+        if (!strncmp(cmd->args[arg_idx], "user", 4)) {
             ;
         } else if (!strncmp(cmd->args[arg_idx], "from", 3)) {
             ;
@@ -174,6 +178,12 @@ void aggregate_state_handler(Command_t *cmd, size_t arg_idx){
 		else if(!strncmp(pch+1, "*", 1)){
 			add_agge_field(cmd,"*");
 		}
+		else if(!strncmp(pch+1, "id1", 3)){
+			add_agge_field(cmd,"id1");
+		}
+		else if(!strncmp(pch+1, "id2", 3)){
+			add_agge_field(cmd,"id2");
+		}
 		/*arg_idx++;
 		if (arg_idx == cmd->args_len) {
             return;
@@ -194,7 +204,7 @@ void aggregate_state_handler(Command_t *cmd, size_t arg_idx){
 }
 void table_state_handler(Command_t *cmd, size_t arg_idx) {
     if (arg_idx < cmd->args_len
-            && !strncmp(cmd->args[arg_idx], "table", 5)) {
+            && !strncmp(cmd->args[arg_idx], "user", 4)) {
 
         arg_idx++;
         if (arg_idx == cmd->args_len) {
@@ -203,6 +213,22 @@ void table_state_handler(Command_t *cmd, size_t arg_idx) {
 	    where_state_handler(cmd,arg_idx+1);
 	    return;
 	} else if (!strncmp(cmd->args[arg_idx], "offset", 6)) {
+            offset_state_handler(cmd, arg_idx+1);
+            return;
+        } else if (!strncmp(cmd->args[arg_idx], "limit", 5)) {
+            limit_state_handler(cmd, arg_idx+1);
+            return;
+        }
+    }
+	else if (arg_idx < cmd->args_len && !strncmp(cmd->args[arg_idx], "like", 4)) {
+        arg_idx++;
+		cmd->user_or_like = LIKETABLE;
+        if (arg_idx == cmd->args_len) {
+            return;
+        } else if(!strncmp(cmd->args[arg_idx],"where",5)){
+			where_state_handler(cmd,arg_idx+1);
+			return;
+		} else if (!strncmp(cmd->args[arg_idx], "offset", 6)) {
             offset_state_handler(cmd, arg_idx+1);
             return;
         } else if (!strncmp(cmd->args[arg_idx], "limit", 5)) {

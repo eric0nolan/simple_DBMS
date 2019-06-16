@@ -22,6 +22,21 @@ Table_t *new_Table(char *file_name) {
     return table;
 }
 
+TableLike_t *new_Tablelike(char *file_name) {
+    TableLike_t *tablelike = (TableLike_t*)malloc(sizeof(TableLike_t));
+    memset((void*)tablelike, 0, sizeof(TableLike_t));
+    tablelike->capacity = INIT_TABLE_SIZE;
+    tablelike->len = 0;
+    tablelike->likes = (Like_t*)malloc(
+                            sizeof(Like_t) * INIT_TABLE_SIZE);
+    tablelike->cache_map = (unsigned char*)malloc(sizeof(char)*INIT_TABLE_SIZE);
+    memset(tablelike->cache_map, 0, sizeof(char)*INIT_TABLE_SIZE);
+    tablelike->fp = NULL;
+    tablelike->file_name = NULL;
+    load_tablelike(tablelike, file_name);
+    return tablelike;
+}
+
 ///
 /// Add the `User_t` data to the given table
 /// If the table is full, it will allocate new space to store more
@@ -63,6 +78,43 @@ int add_User(Table_t *table, User_t *user) {
     table->len++;
     return 1;
 }
+int add_Like(TableLike_t *tablelike, Like_t *like) {
+    size_t idx;
+    //Like_t *like_ptr;
+    if (!tablelike || !like) {
+        return 0;
+    }
+    // Check id doesn't exist in the table
+    /*
+	for (idx = 0; idx < tablelike->len; idx++) {
+        like_ptr = get_Like(tablelike, idx);
+        if (like_ptr->id1 == like->id1) {
+            return 0;
+        }
+    }*/
+    if (tablelike->len == tablelike->capacity) {
+        Like_t *new_like_buf = (Like_t*)malloc(sizeof(Like_t)*(tablelike->len+EXT_LEN));
+        unsigned char *new_cache_buf = (unsigned char *)malloc(sizeof(unsigned char)*(tablelike->len+EXT_LEN));
+
+        memcpy(new_like_buf, tablelike->likes, sizeof(Like_t)*tablelike->len);
+
+        memset(new_cache_buf, 0, sizeof(unsigned char)*(tablelike->len+EXT_LEN));
+        memcpy(new_cache_buf, tablelike->cache_map, sizeof(unsigned char)*tablelike->len);
+
+
+        free(tablelike->likes);
+        free(tablelike->cache_map);
+        tablelike->likes = new_like_buf;
+        tablelike->cache_map = new_cache_buf;
+        tablelike->capacity += EXT_LEN;
+    }
+    idx = tablelike->len;
+    memcpy((tablelike->likes)+idx, like, sizeof(Like_t));
+    tablelike->cache_map[idx] = 1;
+    tablelike->len++;
+    return 1;
+}
+
 int minus_User(Table_t *table, size_t idx) {
     if (!table) {
         return 0;
@@ -131,7 +183,28 @@ int archive_table(Table_t *table) {
     table->file_name = NULL;
     return table->len;
 }
+int archive_tablelike(TableLike_t *tablelike) {
+    size_t archived_len;
+    struct stat st;
 
+    if (tablelike->fp == NULL) {
+        return 0;
+    }
+    if (stat(tablelike->file_name, &st) == 0) {
+        archived_len = st.st_size / sizeof(Like_t);
+    } else {
+        archived_len = 0;
+    }
+    fwrite((void*)(tablelike->likes+archived_len), \
+            sizeof(User_t), tablelike->len-archived_len, \
+            tablelike->fp);
+
+    fclose(tablelike->fp);
+    free(tablelike->file_name);
+    tablelike->fp = NULL;
+    tablelike->file_name = NULL;
+    return tablelike->len;
+}
 ///
 /// Loading the db file will overwrite the existed records in table,
 /// only if the ``file_name`` is NULL
@@ -174,6 +247,43 @@ int load_table(Table_t *table, char *file_name) {
     return table->len;
 }
 
+int load_tablelike(TableLike_t *tablelike, char *file_name) {
+    size_t archived_len;
+    struct stat st;
+    if (tablelike->fp != NULL) {
+        fclose(tablelike->fp);
+        free(tablelike->file_name);
+        tablelike->fp = NULL;
+        tablelike->file_name = NULL;
+    }
+    if (file_name != NULL) {
+        tablelike->len = 0;
+        memset(tablelike->cache_map, 0, sizeof(char)*INIT_TABLE_SIZE);
+        if (stat(file_name, &st) != 0) {
+            //Create new file
+            tablelike->fp = fopen(file_name, "wb");
+        } else {
+            archived_len = st.st_size / sizeof(User_t);
+            if (archived_len > tablelike->capacity) {
+                Like_t *new_like_buf = (Like_t*)malloc(sizeof(Like_t)*(archived_len+EXT_LEN));
+                unsigned char *new_cache_buf = (unsigned char *)malloc(sizeof(unsigned char)*(archived_len+EXT_LEN));
+
+                memset(new_cache_buf, 0, sizeof(unsigned char)*(archived_len+EXT_LEN));
+
+                free(tablelike->likes);
+                free(tablelike->cache_map);
+                tablelike->likes = new_like_buf;
+                tablelike->cache_map = new_cache_buf;
+                tablelike->capacity = archived_len+EXT_LEN;
+            }
+            tablelike->fp = fopen(file_name, "a+b");
+            tablelike->len = archived_len;
+        }
+        tablelike->file_name = strdup(file_name);
+    }
+    return tablelike->len;
+}
+
 ///
 /// Return the user in table by the given index
 ///
@@ -203,3 +313,28 @@ error:
     return NULL;
 }
 
+Like_t* get_Like(TableLike_t *tablelike, size_t idx) {
+    size_t archived_len;
+    struct stat st;
+    if (!tablelike->cache_map[idx]) {
+        if (idx > INIT_TABLE_SIZE) {
+            goto error;
+        }
+        if (stat(tablelike->file_name, &st) != 0) {
+            goto error;
+        }
+        archived_len = st.st_size / sizeof(Like_t);
+        if (idx >= archived_len) {
+            //neither in file, nor in memory
+            goto error;
+        }
+
+        fseek(tablelike->fp, idx*sizeof(Like_t), SEEK_SET);
+        fread(tablelike->likes+idx, sizeof(Like_t), 1, tablelike->fp);
+        tablelike->cache_map[idx] = 1;
+    }
+    return tablelike->likes+idx;
+
+error:
+    return NULL;
+}
