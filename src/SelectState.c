@@ -1,5 +1,6 @@
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include "Command.h"
 #include "SelectState.h"
 
@@ -22,6 +23,8 @@ void field_state_handler(Command_t *cmd, size_t arg_idx) {
 	cmd->agge_args.agge_args.fields = NULL;
 	cmd->agge_args.agge_args.fields_len = 0;
     cmd->agge_args.agge_args.agge_type[0] = none;
+	
+
 	
     while(arg_idx < cmd->args_len) {
         if (!strncmp(cmd->args[arg_idx], "*", 1)) {
@@ -46,8 +49,8 @@ void field_state_handler(Command_t *cmd, size_t arg_idx) {
             aggregate_state_handler(cmd, arg_idx);
         } else if (!strncmp(cmd->args[arg_idx], "from", 4)) {
             table_state_handler(cmd, arg_idx+1);
-            return;
-        } else {
+            return; 
+        }else {
             cmd->type = UNRECOG_CMD;
             return;
         }
@@ -209,7 +212,12 @@ void table_state_handler(Command_t *cmd, size_t arg_idx) {
         arg_idx++;
         if (arg_idx == cmd->args_len) {
             return;
-        } else if(!strncmp(cmd->args[arg_idx],"where",5)){
+        }
+		else if (!strncmp(cmd->args[arg_idx], "join", 4)) {
+            join_state_handler(cmd, arg_idx);
+            return;
+		}			
+		else if(!strncmp(cmd->args[arg_idx],"where",5)){
 	    where_state_handler(cmd,arg_idx+1);
 	    return;
 	} else if (!strncmp(cmd->args[arg_idx], "offset", 6)) {
@@ -223,6 +231,61 @@ void table_state_handler(Command_t *cmd, size_t arg_idx) {
 	else if (arg_idx < cmd->args_len && !strncmp(cmd->args[arg_idx], "like", 4)) {
         arg_idx++;
 		cmd->user_or_like = LIKETABLE;
+        if (arg_idx == cmd->args_len) {
+            return;
+        } 
+		else if (!strncmp(cmd->args[arg_idx], "join", 4)) {
+            join_state_handler(cmd, arg_idx);
+            return;
+		}	
+		else if(!strncmp(cmd->args[arg_idx],"where",5)){
+			where_state_handler(cmd,arg_idx+1);
+			return;
+		} else if (!strncmp(cmd->args[arg_idx], "offset", 6)) {
+            offset_state_handler(cmd, arg_idx+1);
+            return;
+        } else if (!strncmp(cmd->args[arg_idx], "limit", 5)) {
+            limit_state_handler(cmd, arg_idx+1);
+            return;
+        }
+    }
+    cmd->type = UNRECOG_CMD;
+    return;
+}
+//TODO
+void join_state_handler(Command_t *cmd, size_t arg_idx){
+	if (arg_idx < cmd->args_len && !strncmp(cmd->args[arg_idx], "join", 4)) {
+		
+		cmd->join_args.join_args.JoinON = JOINED;
+        arg_idx++;
+		//printf("like:%s\n",cmd->args[arg_idx]);
+		if (!(arg_idx < cmd->args_len && !strncmp(cmd->args[arg_idx], "like", 4))){
+			cmd->type = UNRECOG_CMD;
+			return;
+		}
+		arg_idx++;
+		//printf("on:%s\n",cmd->args[arg_idx]);
+		if (!(arg_idx < cmd->args_len && !strncmp(cmd->args[arg_idx], "on", 2))){
+			cmd->type = UNRECOG_CMD;
+			return;
+		}
+		arg_idx++;
+		//accept the first field
+		cmd->join_args.join_args.LeftField = strdup(cmd->args[arg_idx]);
+		
+		//printf("left:%s\n",cmd->args[arg_idx]);
+		arg_idx++;
+		//accept the '='
+		if (!(arg_idx < cmd->args_len && !strncmp(cmd->args[arg_idx], "=", 1))){
+			cmd->type = UNRECOG_CMD;
+			return;
+		}
+		arg_idx++;
+		//accept the second field
+		cmd->join_args.join_args.RightField = strdup(cmd->args[arg_idx]);
+		
+		//printf("right:%s\n",cmd->args[arg_idx]);
+		arg_idx++;
         if (arg_idx == cmd->args_len) {
             return;
         } else if(!strncmp(cmd->args[arg_idx],"where",5)){

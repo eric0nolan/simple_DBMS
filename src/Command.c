@@ -145,5 +145,7 @@ void cleanup_Command(Command_t *cmd) {
     }
     cmd->type = UNRECOG_CMD;
     cmd->args_len = 0;
+	cmd->user_or_like  = 0;
+	cmd->join_args.join_args.JoinON = UNJOINED;
 }
 

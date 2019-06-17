@@ -24,5 +24,5 @@ int handle_update_cmd(Table_t *table, Command_t *cmd);
 int handle_delete_cmd(Table_t *table, Command_t *cmd);
 void print_help_msg();
 int check_condition(Command_t *cmd, Table_t *table,size_t idx);
-
+int check_equal(Like_t *like,Command_t *cmd,Table_t *table,size_t idx);
 #endif

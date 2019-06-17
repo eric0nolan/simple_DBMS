@@ -186,7 +186,8 @@ int archive_table(Table_t *table) {
 int archive_tablelike(TableLike_t *tablelike) {
     size_t archived_len;
     struct stat st;
-
+	/*printf("tablelike len:%ld\n",tablelike->len);
+	printf("%s\n",tablelike->file_name);*/
     if (tablelike->fp == NULL) {
         return 0;
     }
@@ -196,7 +197,7 @@ int archive_tablelike(TableLike_t *tablelike) {
         archived_len = 0;
     }
     fwrite((void*)(tablelike->likes+archived_len), \
-            sizeof(User_t), tablelike->len-archived_len, \
+            sizeof(Like_t), tablelike->len-archived_len, \
             tablelike->fp);
 
     fclose(tablelike->fp);

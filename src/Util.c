@@ -105,36 +105,20 @@ void print_users(Table_t *table,TableLike_t *tablelike, int *idxList, size_t idx
         offset = 0;
     }
 
+	
+	/*printf("joinON:%ld\n",cmd->join_args.join_args.JoinON);
+	printf("left:%s\n",cmd->join_args.join_args.LeftField);
+	printf("right:%s\n",cmd->join_args.join_args.RightField);*/
+	
 	//the aggregate function
 	if(cmd->agge_args.agge_args.agge_type[0]!=none){
 		if(offset ==0)
 			print_agge(table,tablelike,idxList,idxListLen,cmd);
 		return;
 	}
+	
 	//end of the aggregate function
 	
-	
-    /*if (idxList) {
-		int offset_count = offset;
-        for (idx = offset; idx < idxListLen; idx++) {
-            if (limit != -1 && (int)idx - (int)offset >= (int)limit) {
-                break;
-            }
-			if(check_condition(cmd,table,idx)){
-				offset_count--;
-				if(offset_count<0)
-					print_user(get_User(table, idx), &(cmd->cmd_args.sel_args));
-			}
-			else{
-				if(limit != -1 && offset == 0){
-					limit++; 
-				}
-				else if(offset != 0 && limit != -1){
-					limit++;
-				}
-			}
-				
-        }*/
 	if(cmd->user_or_like == LIKETABLE){
 		int offset_count = offset;
         for (idx = 0; idx < tablelike->len; idx++) {
@@ -156,7 +140,38 @@ void print_users(Table_t *table,TableLike_t *tablelike, int *idxList, size_t idx
 				//printf("offset:%d\n",offset);
 			}
         }
-    } else {
+    } 
+	else if(cmd->join_args.join_args.JoinON==JOINED){
+		int offset_count = offset;
+		printf("HI!\n");
+        for (idx = 0; idx < table->len; idx++) {
+            if (limit != -1 && (int)idx - (int)offset >= (int)limit) {
+                break;
+            }
+			if(check_condition(cmd,table,idx)){
+				int idx_join = 0;
+				for(idx_join = 0; idx_join < tablelike->len; idx_join++){
+					Like_t *tempPtr = get_Like(tablelike,idx_join);
+					if(check_equal(tempPtr,cmd,table,idx)){
+						offset_count--;
+						if(offset_count<0)
+							print_user(get_User(table, idx), &(cmd->cmd_args.sel_args));					
+					}
+				}
+
+			}
+			else{
+				if(limit != -1 && offset == 0){
+					limit++; 
+				}
+				else if(offset != 0 && limit != -1){
+					limit++;
+				}
+				//printf("offset:%d\n",offset);
+			}
+        }		
+	}
+	else {
 		int offset_count = offset;
         for (idx = 0; idx < table->len; idx++) {
             if (limit != -1 && (int)idx - (int)offset >= (int)limit) {
@@ -463,6 +478,36 @@ int check_condition(Command_t *cmd, Table_t *table,size_t idx){
 	}
 	return 1; 
 }
+
+int check_equal(Like_t *like,Command_t *cmd,Table_t *table,size_t idx){
+	User_t * userptr= get_User(table,idx);
+	if(!strncmp(cmd->join_args.join_args.LeftField,"id",2)){
+		if(!strncmp(cmd->join_args.join_args.RightField,"id1",2)){
+			if(userptr->id == like->id1){
+				return 1;
+			}
+		}
+		else if(!strncmp(cmd->join_args.join_args.RightField,"id2",2)){
+			if(userptr->id == like->id2){
+				return 1;
+			}
+		}
+	}
+	else if(!strncmp(cmd->join_args.join_args.LeftField,"age",3)){
+		if(!strncmp(cmd->join_args.join_args.RightField,"id1",2)){
+			if(userptr->age == like->id1){
+				return 1;
+			}
+		}
+		else if(!strncmp(cmd->join_args.join_args.RightField,"id2",2)){
+			if(userptr->age == like->id2){
+				return 1;
+			}
+		}		
+	}
+	return 0;
+}
+
 
 ///
 /// This function received an output argument

@@ -40,6 +40,11 @@ enum {
 	USERTABLE = 4001,
 	LIKETABLE,
 };
+
+enum {
+	UNJOINED = 5001,
+	JOINED,
+};
 typedef struct {
     char name[256];
     int len;
@@ -82,6 +87,13 @@ typedef struct UpdArgs {
 	size_t num;
 }UpdArgs_t;
 
+
+typedef struct JoinArgs {
+	size_t JoinON;
+    char * LeftField;
+    char * RightField;
+}JoinArgs_t;
+
 typedef union {
     SelectArgs_t sel_args;
 } CmdArg_t;
@@ -98,6 +110,10 @@ typedef union{
     UpdArgs_t upd_args;
 } UpdArg_t;
 
+typedef union{
+    JoinArgs_t join_args;
+} JoinArg_t;
+
 typedef struct Command {
     unsigned char type;
     char **args;
@@ -108,6 +124,7 @@ typedef struct Command {
     WheArg_t whe_args;
 	AggeArg_t agge_args;
 	UpdArg_t upd_args;
+	JoinArg_t join_args;
 } Command_t;
 
 Command_t* new_Command();
