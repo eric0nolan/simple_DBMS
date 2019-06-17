@@ -199,10 +199,10 @@ void print_agge(Table_t *table, TableLike_t *tablelike,int *idxList, size_t idxL
 	
 	//first check agge_type then calculate fields in each type, at last output
 	size_t agge_idx = 0;
-	for(agge_idx = 0;agge_idx < cmd->agge_args.agge_args.fields_len;agge_idx++){
+	/*for(agge_idx = 0;agge_idx < cmd->agge_args.agge_args.fields_len;agge_idx++){
 		printf("agge_idx:%ld,agge_type:%ld\n",agge_idx,cmd->agge_args.agge_args.agge_type[agge_idx]);
 		printf("agge_idx:%ld,agge_fields:%s\n",agge_idx,cmd->agge_args.agge_args.fields[agge_idx]);
-	}
+	}*/
 	
 	printf("(");
 	
