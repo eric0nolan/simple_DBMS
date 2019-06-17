@@ -361,7 +361,14 @@ void where_state_handler(Command_t *cmd,size_t arg_idx){
 	     }
 	     arg_idx++;
 	     if(cmd->whe_args.whe_args.op_num==andOp || cmd->whe_args.whe_args.op_num==orOp){
-	     	add_where_field(cmd,cmd->args[arg_idx]);
+			if(strstr(cmd->args[arg_idx], "id") != NULL)
+				add_where_field(cmd,"id");
+			else if(strstr(cmd->args[arg_idx], "name") != NULL)
+				add_where_field(cmd,"name");
+			else if(strstr(cmd->args[arg_idx], "email") != NULL)
+				add_where_field(cmd,"email");
+			else if(strstr(cmd->args[arg_idx], "age") != NULL)
+				add_where_field(cmd,"age");
 		if ( strstr(cmd->args[arg_idx], "id") != NULL || strstr(cmd->args[arg_idx], "age") != NULL ){
 	     		arg_idx++;
              	if(!strncmp(cmd->args[arg_idx],"=",1)){
