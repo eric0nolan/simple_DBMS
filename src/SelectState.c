@@ -271,7 +271,10 @@ void join_state_handler(Command_t *cmd, size_t arg_idx){
 		}
 		arg_idx++;
 		//accept the first field
-		cmd->join_args.join_args.LeftField = strdup(cmd->args[arg_idx]);
+	    if(strstr(cmd->args[arg_idx], "id") != NULL)
+			cmd->join_args.join_args.LeftField = strdup("id");
+		else if(strstr(cmd->args[arg_idx], "age") != NULL)
+			cmd->join_args.join_args.LeftField = strdup("age");
 		
 		//printf("left:%s\n",cmd->args[arg_idx]);
 		arg_idx++;
@@ -282,7 +285,10 @@ void join_state_handler(Command_t *cmd, size_t arg_idx){
 		}
 		arg_idx++;
 		//accept the second field
-		cmd->join_args.join_args.RightField = strdup(cmd->args[arg_idx]);
+		if(strstr(cmd->args[arg_idx], "id1") != NULL)
+			cmd->join_args.join_args.RightField = strdup("id1");
+		else if(strstr(cmd->args[arg_idx], "id2") != NULL)
+			cmd->join_args.join_args.RightField = strdup("id2");
 		
 		//printf("right:%s\n",cmd->args[arg_idx]);
 		arg_idx++;

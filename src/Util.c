@@ -143,7 +143,7 @@ void print_users(Table_t *table,TableLike_t *tablelike, int *idxList, size_t idx
     } 
 	else if(cmd->join_args.join_args.JoinON==JOINED){
 		int offset_count = offset;
-		printf("HI!\n");
+		//printf("HI!\n");
         for (idx = 0; idx < table->len; idx++) {
             if (limit != -1 && (int)idx - (int)offset >= (int)limit) {
                 break;
@@ -154,8 +154,10 @@ void print_users(Table_t *table,TableLike_t *tablelike, int *idxList, size_t idx
 					Like_t *tempPtr = get_Like(tablelike,idx_join);
 					if(check_equal(tempPtr,cmd,table,idx)){
 						offset_count--;
-						if(offset_count<0)
-							print_user(get_User(table, idx), &(cmd->cmd_args.sel_args));					
+						if(offset_count<0){
+							print_user(get_User(table, idx), &(cmd->cmd_args.sel_args));
+						}
+											
 					}
 				}
 
@@ -204,6 +206,9 @@ void print_agge(Table_t *table, TableLike_t *tablelike,int *idxList, size_t idxL
 		printf("agge_idx:%ld,agge_fields:%s\n",agge_idx,cmd->agge_args.agge_args.fields[agge_idx]);
 	}*/
 	
+	/*printf("%s\n",cmd->join_args.join_args.LeftField);
+	printf("%s\n",cmd->join_args.join_args.RightField);
+	printf("%ld\n",cmd->join_args.join_args.JoinON);*/
 	printf("(");
 	
 	if(cmd->user_or_like == LIKETABLE){
@@ -248,8 +253,9 @@ void print_agge(Table_t *table, TableLike_t *tablelike,int *idxList, size_t idxL
 		} else if(cmd->agge_args.agge_args.agge_type[agge_idx] == count){
 			int count = 0;
 			size_t idx = 0;
-			for (idx = 0; idx < tablelike->len; idx++)
+			for (idx = 0; idx < tablelike->len; idx++){
 				count++;
+			}
 			printf("%d",count);
 		}
 		//
@@ -262,6 +268,7 @@ void print_agge(Table_t *table, TableLike_t *tablelike,int *idxList, size_t idxL
 		return;
 	}
 	
+	
 	for(agge_idx = 0 ;agge_idx < cmd->agge_args.agge_args.fields_len;agge_idx++){
 		//
 		if(cmd->agge_args.agge_args.agge_type[agge_idx] == sum){
@@ -269,13 +276,31 @@ void print_agge(Table_t *table, TableLike_t *tablelike,int *idxList, size_t idxL
 			int result_sumAge = 0;
 			size_t idx = 0;
 			User_t *temp_user = NULL;
+			
+			
+			
 			for (idx = 0; idx < table->len; idx++) {
 				temp_user = get_User(table, idx);
 				if(check_condition(cmd,table,idx)){
-					if(!strncmp(cmd->agge_args.agge_args.fields[agge_idx],"id",2)){
-						result_sumId += temp_user->id;
-					} else if(!strncmp(cmd->agge_args.agge_args.fields[agge_idx],"age",3))
-						result_sumAge += temp_user->age;
+					
+					if(cmd->join_args.join_args.JoinON == JOINED){
+						int idx_join = 0;
+						for(idx_join = 0; idx_join < tablelike->len; idx_join++){
+							Like_t *tempPtr = get_Like(tablelike,idx_join);
+							if(check_equal(tempPtr,cmd,table,idx)){
+								result_sumId+=temp_user->id;
+								result_sumAge+=temp_user->age;
+							}
+						}
+					}
+					else{
+						if(!strncmp(cmd->agge_args.agge_args.fields[agge_idx],"id",2)){
+							result_sumId += temp_user->id;
+						} 
+						else if(!strncmp(cmd->agge_args.agge_args.fields[agge_idx],"age",3))
+							result_sumAge += temp_user->age;
+					}
+
 				}
 			}
 			if(!strncmp(cmd->agge_args.agge_args.fields[agge_idx],"id",2))
@@ -291,11 +316,28 @@ void print_agge(Table_t *table, TableLike_t *tablelike,int *idxList, size_t idxL
 			for (idx = 0; idx < table->len; idx++) {
 				temp_user = get_User(table, idx);
 				if(check_condition(cmd,table,idx)){
-					base++;
-					if(!strncmp(cmd->agge_args.agge_args.fields[agge_idx],"id",2)){
-						result_avgId += temp_user->id;
-					} else if(!strncmp(cmd->agge_args.agge_args.fields[agge_idx],"age",3))
-						result_avgAge += temp_user->age;
+					if(cmd->join_args.join_args.JoinON == JOINED){
+						int idx_join = 0;
+						for(idx_join = 0; idx_join < tablelike->len; idx_join++){
+							Like_t *tempPtr = get_Like(tablelike,idx_join);
+							if(check_equal(tempPtr,cmd,table,idx)){
+								base++;
+								if(!strncmp(cmd->agge_args.agge_args.fields[agge_idx],"id",2))
+									result_avgId += temp_user->id;
+								else if(!strncmp(cmd->agge_args.agge_args.fields[agge_idx],"age",3))
+									result_avgAge += temp_user->age;
+							}
+						}
+						
+					}
+					else{
+						base++;
+						if(!strncmp(cmd->agge_args.agge_args.fields[agge_idx],"id",2)){
+							result_avgId += temp_user->id;
+						} else if(!strncmp(cmd->agge_args.agge_args.fields[agge_idx],"age",3))
+							result_avgAge += temp_user->age;
+					}
+
 				}
 			}
 			result_avgId/=base;
@@ -309,7 +351,18 @@ void print_agge(Table_t *table, TableLike_t *tablelike,int *idxList, size_t idxL
 			size_t idx = 0;
 			for (idx = 0; idx < table->len; idx++) {
 				if(check_condition(cmd,table,idx)){
-					count++;
+					if(cmd->join_args.join_args.JoinON == JOINED){
+						int idx_join = 0;
+						for(idx_join = 0; idx_join < tablelike->len; idx_join++){
+							Like_t *tempPtr = get_Like(tablelike,idx_join);
+							if(check_equal(tempPtr,cmd,table,idx)){
+								count++;
+								//break;
+							}	
+						}
+					}
+					else
+						count++;
 				}
 			}
 			printf("%d",count);
@@ -319,7 +372,6 @@ void print_agge(Table_t *table, TableLike_t *tablelike,int *idxList, size_t idxL
 			printf(", ");
 	}
 	printf(")\n");
-	
 	
 	
 	
@@ -482,24 +534,24 @@ int check_condition(Command_t *cmd, Table_t *table,size_t idx){
 int check_equal(Like_t *like,Command_t *cmd,Table_t *table,size_t idx){
 	User_t * userptr= get_User(table,idx);
 	if(!strncmp(cmd->join_args.join_args.LeftField,"id",2)){
-		if(!strncmp(cmd->join_args.join_args.RightField,"id1",2)){
+		if(!strncmp(cmd->join_args.join_args.RightField,"id1",3)){
 			if(userptr->id == like->id1){
 				return 1;
 			}
 		}
-		else if(!strncmp(cmd->join_args.join_args.RightField,"id2",2)){
+		else if(!strncmp(cmd->join_args.join_args.RightField,"id2",3)){
 			if(userptr->id == like->id2){
 				return 1;
 			}
 		}
 	}
 	else if(!strncmp(cmd->join_args.join_args.LeftField,"age",3)){
-		if(!strncmp(cmd->join_args.join_args.RightField,"id1",2)){
+		if(!strncmp(cmd->join_args.join_args.RightField,"id1",3)){
 			if(userptr->age == like->id1){
 				return 1;
 			}
 		}
-		else if(!strncmp(cmd->join_args.join_args.RightField,"id2",2)){
+		else if(!strncmp(cmd->join_args.join_args.RightField,"id2",3)){
 			if(userptr->age == like->id2){
 				return 1;
 			}
