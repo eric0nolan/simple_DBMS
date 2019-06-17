@@ -310,8 +310,16 @@ void join_state_handler(Command_t *cmd, size_t arg_idx){
 }
 void where_state_handler(Command_t *cmd,size_t arg_idx){
     if (arg_idx < cmd->args_len){
-	add_where_field(cmd,cmd->args[arg_idx]);
-	if ( !strncmp(cmd->args[arg_idx],"id",2) || !strncmp(cmd->args[arg_idx],"age",3) ){
+		
+	if(strstr(cmd->args[arg_idx], "id") != NULL)
+		add_where_field(cmd,"id");
+	else if(strstr(cmd->args[arg_idx], "name") != NULL)
+		add_where_field(cmd,"name");
+	else if(strstr(cmd->args[arg_idx], "email") != NULL)
+		add_where_field(cmd,"email");
+	else if(strstr(cmd->args[arg_idx], "age") != NULL)
+		add_where_field(cmd,"age");
+	if ( strstr(cmd->args[arg_idx], "id") != NULL || strstr(cmd->args[arg_idx], "age") != NULL ){
 	     arg_idx++;
          if(!strncmp(cmd->args[arg_idx],"=",1)){
 	          cmd->whe_args.whe_args.op_type1 = equalto;
@@ -328,7 +336,7 @@ void where_state_handler(Command_t *cmd,size_t arg_idx){
 	     } 
 	     arg_idx++;
 	     cmd->whe_args.whe_args.num_comp1 = atoi(cmd->args[arg_idx]);
-	} else if ( !strncmp(cmd->args[arg_idx],"name",4) || !strncmp(cmd->args[arg_idx],"email",5) ){
+	} else if ( strstr(cmd->args[arg_idx], "name") != NULL || strstr(cmd->args[arg_idx], "email") != NULL ){
 	     arg_idx++;
              if(!strncmp(cmd->args[arg_idx],"=",1)){
 	          cmd->whe_args.whe_args.op_type1 = stringEqualto;
@@ -354,7 +362,7 @@ void where_state_handler(Command_t *cmd,size_t arg_idx){
 	     arg_idx++;
 	     if(cmd->whe_args.whe_args.op_num==andOp || cmd->whe_args.whe_args.op_num==orOp){
 	     	add_where_field(cmd,cmd->args[arg_idx]);
-		if ( !strncmp(cmd->args[arg_idx],"id",2) || !strncmp(cmd->args[arg_idx],"age",3) ){
+		if ( strstr(cmd->args[arg_idx], "id") != NULL || strstr(cmd->args[arg_idx], "age") != NULL ){
 	     		arg_idx++;
              	if(!strncmp(cmd->args[arg_idx],"=",1)){
 	          	cmd->whe_args.whe_args.op_type2 = equalto;
@@ -371,7 +379,7 @@ void where_state_handler(Command_t *cmd,size_t arg_idx){
 	     	} 
 	     	arg_idx++;
 	     	cmd->whe_args.whe_args.num_comp2 = atoi(cmd->args[arg_idx]);
-	     } else if ( !strncmp(cmd->args[arg_idx],"name",4) || !strncmp(cmd->args[arg_idx],"email",5) ){
+	     } else if ( strstr(cmd->args[arg_idx], "name") != NULL || strstr(cmd->args[arg_idx], "email") != NULL ){
 	     	arg_idx++;
              	if(!strncmp(cmd->args[arg_idx],"=",1)){
 	          cmd->whe_args.whe_args.op_type2 = stringEqualto;
